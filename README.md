@@ -31,14 +31,32 @@ Tokamak treats untrusted code as **"Plasma"**—highly useful matter that must b
 - Linux Kernel 5.4+ (or WSL2/OrbStack on Mac)
 - `g++`, `make`, `wget`
 
+### Build & Ignition
+
+1. **Initialize the Vacuum Chamber** (Download RootFS):
+   ```bash
+   ./setup.sh
+    ```
+
+2. **Compile the Reactor**:
+    ```bash
+    g++ -o reactor reactor.cpp
+    ```
+
+3. **Inject Plasma** (Run a command safely):
+    ```bash
+    # Requires root for chroot/namespaces
+    sudo ./reactor /bin/ls -la /
+    ```
+
 ## Roadmap
 
 ### Phase 1: The "Iron Box" (Systems & Security Core)
 
 **Goal:** Build a secure C++ runtime that isolates the process using raw Linux primitives.
 
-- [ ] **Process Isolation:** Implement `fork()` and `execvp()` to separate the Reactor from Plasma.
-- [ ] **Filesystem Locking:** Implement `chroot()` to restrict file access to the Vacuum (Alpine RootFS).
+- [x] **Process Isolation:** Implement `fork()` and `execvp()` to separate the Reactor from Plasma.
+- [x] **Filesystem Locking:** Implement `chroot()` to restrict file access to the Vacuum (Alpine RootFS).
 - [ ] **Network Isolation:** Use `unshare(CLONE_NEWNET)` to create a disconnected network namespace (The Air Gap).
 - [ ] **System Call Filtering:** Implement `seccomp-bpf` to whitelist only safe syscalls (`read`, `write`, `exit`) and block dangerous ones (`socket`, `fork`).
 
