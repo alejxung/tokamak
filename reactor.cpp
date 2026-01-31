@@ -1,5 +1,6 @@
 #include <cstring>
 #include <iostream>
+#include <sched.h>	  // unshare
 #include <sys/stat.h> // umask
 #include <sys/wait.h> // waitpid
 #include <unistd.h>	  // fork, execvp, chroot
@@ -9,6 +10,14 @@
 const char *VACUUM_PATH = "./vacuum_root";
 
 void enter_vacuum() {
+	// The Air Gap (Network Isolation)
+	// Create a new empty network namespace.
+	// The process will see NO network interfaces.
+	if (unshare(CLONE_NEWNET) != 0) {
+		perror("[ERROR] Failed to isolate network (unshare)");
+		exit(1);
+	}
+
 	// Seal the Vacuum (chroot)
 	// We lock the process inside the vacuum_root folder.
 	if (chroot(VACUUM_PATH) != 0) {

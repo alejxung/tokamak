@@ -57,7 +57,7 @@ Tokamak treats untrusted code as **"Plasma"**—highly useful matter that must b
 
 - [x] **Process Isolation:** Implement `fork()` and `execvp()` to separate the Reactor from Plasma.
 - [x] **Filesystem Locking:** Implement `chroot()` to restrict file access to the Vacuum (Alpine RootFS).
-- [ ] **Network Isolation:** Use `unshare(CLONE_NEWNET)` to create a disconnected network namespace (The Air Gap).
+- [x] **Network Isolation:** Use `unshare(CLONE_NEWNET)` to create a disconnected network namespace (The Air Gap).
 - [ ] **System Call Filtering:** Implement `seccomp-bpf` to whitelist only safe syscalls (`read`, `write`, `exit`) and block dangerous ones (`socket`, `fork`).
 
 ### Phase 2: The "Speed Demon" (Performance)
