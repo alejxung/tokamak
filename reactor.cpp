@@ -36,7 +36,6 @@ void enter_vacuum() {
 
 void engage_shield() {
 	// Initialize the filter: ALLOW all syscalls by default.
-	// We strictly blacklist dangerous calls to maintain stability.
 	scmp_filter_ctx ctx = seccomp_init(SCMP_ACT_ALLOW);
 	if (ctx == NULL) {
 		perror("[ERROR] Failed to init seccomp");
@@ -50,10 +49,20 @@ void engage_shield() {
 		exit(1);
 	}
 
-	// Note: clone/fork rules are intentionally omitted here to support
-	// QEMU emulation on Apple Silicon (which uses clone for threading).
-	// In a native Linux environment, these should be blocked to prevent fork
-	// bombs.
+	// This neutralizes Fork Bombs and prevents multi-process attacks.
+	// We block 'clone', 'fork', and 'vfork'.
+	if (seccomp_rule_add(ctx, SCMP_ACT_ERRNO(EPERM), SCMP_SYS(clone), 0) < 0) {
+		perror("[ERROR] Failed to add clone rule");
+		exit(1);
+	}
+	if (seccomp_rule_add(ctx, SCMP_ACT_ERRNO(EPERM), SCMP_SYS(fork), 0) < 0) {
+		perror("[ERROR] Failed to add fork rule");
+		exit(1);
+	}
+	if (seccomp_rule_add(ctx, SCMP_ACT_ERRNO(EPERM), SCMP_SYS(vfork), 0) < 0) {
+		perror("[ERROR] Failed to add vfork rule");
+		exit(1);
+	}
 
 	// Load the filter into the kernel.
 	std::cout << "[Plasma] Engaging Seccomp Deflector Shields..." << std::endl;
