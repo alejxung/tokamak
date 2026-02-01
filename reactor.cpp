@@ -1,6 +1,7 @@
 #include <cstring>
 #include <iostream>
 #include <sched.h>	  // unshare
+#include <seccomp.h>  // libseccomp
 #include <sys/stat.h> // umask
 #include <sys/wait.h> // waitpid
 #include <unistd.h>	  // fork, execvp, chroot
@@ -33,6 +34,37 @@ void enter_vacuum() {
 	}
 }
 
+void engage_shield() {
+	// Initialize the filter: ALLOW all syscalls by default.
+	// We strictly blacklist dangerous calls to maintain stability.
+	scmp_filter_ctx ctx = seccomp_init(SCMP_ACT_ALLOW);
+	if (ctx == NULL) {
+		perror("[ERROR] Failed to init seccomp");
+		exit(1);
+	}
+
+	// Prevent socket creation to block network access.
+	// Returns EPERM (Permission Denied) so applications handle it gracefully.
+	if (seccomp_rule_add(ctx, SCMP_ACT_ERRNO(EPERM), SCMP_SYS(socket), 0) < 0) {
+		perror("[ERROR] Failed to add socket rule");
+		exit(1);
+	}
+
+	// Note: clone/fork rules are intentionally omitted here to support
+	// QEMU emulation on Apple Silicon (which uses clone for threading).
+	// In a native Linux environment, these should be blocked to prevent fork
+	// bombs.
+
+	// Load the filter into the kernel.
+	std::cout << "[Plasma] Engaging Seccomp Deflector Shields..." << std::endl;
+	if (seccomp_load(ctx) < 0) {
+		perror("[ERROR] Failed to load seccomp filter");
+		exit(1);
+	}
+
+	seccomp_release(ctx);
+}
+
 int main(int argc, char *argv[]) {
 	if (argc < 2) {
 		std::cerr << "Usage: ./reactor <plasma_command> [args...]" << std::endl;
@@ -55,6 +87,7 @@ int main(int argc, char *argv[]) {
 		// ================= PLASMA (Inside the Vacuum) =================
 
 		enter_vacuum();
+		engage_shield();
 
 		std::cout << "[Plasma] Injected into Vacuum. PID: " << getpid()
 				  << std::endl;
