@@ -30,23 +30,25 @@ Tokamak treats untrusted code as **"Plasma"**—highly useful matter that must b
 
 - Linux Kernel 5.4+ (or WSL2/OrbStack on Mac)
 - `g++`, `make`, `wget`
+- `libseccomp-dev` (Script will attempt to install if missing)
 
 ### Build & Ignition
 
-1. **Initialize the Vacuum Chamber** (Download RootFS):
+Tokamak uses a unified build system to prepare the environment, compile the reactor, and harden the filesystem.
+
+1. **Initialize the System**:
    ```bash
+   chmod +x setup.sh
    ./setup.sh
     ```
 
-2. **Compile the Reactor**:
-    ```bash
-    g++ -o reactor reactor.cpp
-    ```
+*Note: This script will download the Alpine RootFS, remove sensitive files (hardening), and compile the C++ binaries.*
 
-3. **Inject Plasma** (Run a command safely):
+2. **Run a Secure Test**:
+The setup script compiles a `malware` test payload to `/bin/malware` inside the vacuum.
     ```bash
     # Requires root for chroot/namespaces
-    sudo ./reactor /bin/ls -la /
+    sudo ./reactor /bin/malware
     ```
 
 ## Roadmap
@@ -58,7 +60,7 @@ Tokamak treats untrusted code as **"Plasma"**—highly useful matter that must b
 - [x] **Process Isolation:** Implement `fork()` and `execvp()` to separate the Reactor from Plasma.
 - [x] **Filesystem Locking:** Implement `chroot()` to restrict file access to the Vacuum (Alpine RootFS).
 - [x] **Network Isolation:** Use `unshare(CLONE_NEWNET)` to create a disconnected network namespace (The Air Gap).
-- [ ] **System Call Filtering:** Implement `seccomp-bpf` to whitelist only safe syscalls (`read`, `write`, `exit`) and block dangerous ones (`socket`, `fork`).
+- [x] **System Call Filtering:** Implement `seccomp-bpf` to whitelist only safe syscalls and block dangerous ones (`socket`, `fork`).
 
 ### Phase 2: The "Speed Demon" (Performance)
 
